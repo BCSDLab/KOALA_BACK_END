@@ -54,7 +54,7 @@ public class S3Util {
         }
 
         //return amazonS3.getUrl(bucket, date+"/"+savedName).toString();
-        return "https://" + "koala-s3.s3.ap-northeast-2.amazonaws.com" +"/" + date + "/" + savedName;
+        return "https://" + "koala-storage.s3.ap-northeast-2.amazonaws.com" +"/" + date + "/" + savedName;
     }
 
     public void deleteFile(String url){
