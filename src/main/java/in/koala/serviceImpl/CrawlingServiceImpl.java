@@ -133,7 +133,7 @@ public class CrawlingServiceImpl implements CrawlingService {
     public Boolean youtubeCrawling(Timestamp crawlingAt) throws Exception {
 
         List<Crawling> crawlingList = new ArrayList<>();
-        String time = makeYoutubeTimeFormat(crawlingMapper.getMostRecentCrawlingTime());
+        String time = makeYoutubeTimeFormat(crawlingAt);
         ResponseEntity<String> youtube;
 
         try{
@@ -460,6 +460,7 @@ public class CrawlingServiceImpl implements CrawlingService {
                 .queryParam("key",  youtubeAccessKey)
                 .queryParam("maxResults", "50")
                 .queryParam("type", "video")
+                .queryParam("order", "date")
                 .queryParam("publishedAfter", time);
 
         HttpHeaders headers = new HttpHeaders();
