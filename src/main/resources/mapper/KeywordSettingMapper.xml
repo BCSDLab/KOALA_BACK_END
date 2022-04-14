@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="in.koala.mapper.KeywordSettingMapper">
+
+    <select id="hasDuplicatedUserIdInKeywordSetting" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT count(user_id) FROM user_keyword_setting WHERE user_id=#{userId}
+    </select>
+    <insert id="setUserIdInKeywordSetting" parameterType="java.lang.Long">
+        INSERT INTO user_keyword_setting(user_id)
+        VALUES (#{userId});
+    </insert>
+</mapper>
