@@ -2,10 +2,13 @@ package in.koala.controller;
 
 import in.koala.annotation.Auth;
 import in.koala.annotation.Xss;
+import in.koala.controller.dto.KeywordSettingRequest;
 import in.koala.domain.Keyword;
+import in.koala.domain.KeywordSetting;
 import in.koala.domain.Notice;
 import in.koala.controller.response.BaseResponse;
 import in.koala.service.KeywordService;
+import in.koala.service.KeywordSettingService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import java.util.List;
 public class KeywordController {
 
     private final KeywordService keywordService;
+    private final KeywordSettingService keywordSettingService;
     
     @Xss
     @Auth
@@ -162,4 +166,24 @@ public class KeywordController {
         return new ResponseEntity(BaseResponse.of(keywordService.searchSite(site), HttpStatus.OK), HttpStatus.OK);
     }
 
+    @Auth
+    @ApiOperation(value ="키워드_환경설정 조회",
+            notes="accessToken을 활용하여 유저가 설정한 키워드 환경설정을 조회",
+            authorizations = @Authorization(value = "Bearer +accessToken"))
+    @GetMapping(value = "/keyword/setting")
+    public ResponseEntity<KeywordSetting> getUserKeywordSetting(@RequestParam(name ="userId", required = false) Long userId){
+        return new ResponseEntity(BaseResponse.of(keywordSettingService.getUserKeywordSetting(userId), HttpStatus.OK), HttpStatus.OK);
+    }
+
+    @Auth
+    @ApiOperation(value = "키워드_환경설정 수정",
+            notes="accessToken을 활용하여 유저가 설정한 키워드 환경설정을 수정",
+            authorizations = @Authorization(value = "Bearer +accessToken"))
+    @PutMapping(value ="/keyword/setting")
+    public ResponseEntity modifyKeywordSetting(@RequestParam(name ="userId", required = false) Long userId,
+                                                @RequestBody(required = false) KeywordSettingRequest keywordSettingRequest){
+        KeywordSetting keywordSetting = keywordSettingRequest.toKeywordSetting(userId);
+        keywordSettingService.modifyKeywordSetting(keywordSetting);
+        return new ResponseEntity(BaseResponse.of("키워드 환경설정 수정에 성공했습니다.",  HttpStatus.OK), HttpStatus.OK);
+    }
 }

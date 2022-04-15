@@ -12,6 +12,7 @@ import in.koala.exception.NonCriticalException;
 import in.koala.mapper.AuthEmailMapper;
 import in.koala.mapper.UserMapper;
 import in.koala.service.DeviceTokenService;
+import in.koala.service.KeywordSettingService;
 import in.koala.service.sns.SnsLogin;
 import in.koala.service.UserService;
 import in.koala.util.ImageUtil;
@@ -51,6 +52,8 @@ public class UserServiceImpl implements UserService {
     private final SpringTemplateEngine springTemplateEngine;
     private final S3Util s3Util;
     private final ImageUtil imageUtil;
+
+    private final KeywordSettingService keywordSettingService;
 
     @Value("${s3.default_image.url}")
     private String defaultUrl;
@@ -158,6 +161,8 @@ public class UserServiceImpl implements UserService {
         // 토큰이 없다면 토큰 생성, 있다면 토큰의 user_id 갱신
         this.setUserIdInDeviceToken(token);
 
+        keywordSettingService.setUserIdInKeywordSetting(token.getUserId());
+
         return generateAccessAndRefreshToken(token.getUserId(), UserType.NON);
     }
 
@@ -210,6 +215,7 @@ public class UserServiceImpl implements UserService {
             setUserIdInDeviceToken(DeviceToken.ofNormalUser(loginUser.getId(), deviceToken));
         }
 
+        keywordSettingService.setUserIdInKeywordSetting(loginUser.getId());
         return generateAccessAndRefreshToken(loginUser.getId(), UserType.NORMAL);
     }
 
