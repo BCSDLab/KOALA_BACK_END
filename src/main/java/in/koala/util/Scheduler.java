@@ -4,9 +4,13 @@ import in.koala.domain.PushNotice;
 import in.koala.mapper.KeywordPushMapper;
 import in.koala.service.CrawlingService;
 import in.koala.service.KeywordPushService;
+import in.koala.service.NoticeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
@@ -15,27 +19,45 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class Scheduler {
-    /**
-    1초에 한번씩 호출하는 fixedDelay
-     */
+public class Scheduler  {
 
     private final KeywordPushService keywordPushService;
     private final CrawlingService crawlingService;
     private final KeywordPushMapper keywordPushMapper;
+    private final NoticeService noticeService;
 
     @Scheduled(fixedDelay = 600000)
-    public void scheduleFixedRateTask() throws Exception {
+    public void koreaTechTask() throws Exception {
 
         crawlingService.executeAll();
         Timestamp mostRecentCrawlingTime = crawlingService.getMostRecentCrawlingTime();
         List<PushNotice> pushNoticeList = keywordPushMapper.pushKeywordByLatelyCrawlingTime(mostRecentCrawlingTime);
 
-        for(PushNotice notice : pushNoticeList){
+        for (PushNotice notice : pushNoticeList) {
             keywordPushService.pushNotification(notice.getTokenList(), notice.getKeyword(),
                     notice.getSite(), notice.getUrl());
         }
+        if(!pushNoticeList.isEmpty())
+            noticeService.insertNotice(pushNoticeList);
+    }
 
+    @Scheduled(fixedDelay = 900000)
+    public void youtubeTask() throws Exception {
+
+        Timestamp mostRecentCrawlingTime = crawlingService.getMostRecentCrawlingTime();
+
+        if(mostRecentCrawlingTime != null)
+            crawlingService.youtubeCrawling(mostRecentCrawlingTime);
+        else
+            crawlingService.youtubeCrawling(new Timestamp(System.currentTimeMillis()));
+        List<PushNotice> pushNoticeList = keywordPushMapper.pushKeywordByLatelyCrawlingTime(mostRecentCrawlingTime);
+
+        for (PushNotice notice : pushNoticeList) {
+            keywordPushService.pushNotification(notice.getTokenList(), notice.getKeyword(),
+                    notice.getSite(), notice.getUrl());
+        }
+        if(!pushNoticeList.isEmpty())
+            noticeService.insertNotice(pushNoticeList);
     }
     /**
      1초에 한번씩 호출하는 cron expression
