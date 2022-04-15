@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="in.koala.mapper.KeywordSettingMapper">
+
+    <resultMap id="userKeywordSettingResult" type="in.koala.domain.KeywordSetting">
+        <id column="user_id" property="userId"/>
+        <result column="keyword_notification_off" property="keywordNotificationOff"/>
+        <result column="keyword_vibration_off" property="keywordVibrationOff"/>
+        <result column="day" property="day"/>
+        <result column="time" property="time"/>
+        <result column="sound" property="sound"/>
+    </resultMap>
+
+    <select id="hasDuplicatedUserIdInKeywordSetting" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT count(user_id) FROM user_keyword_setting WHERE user_id=#{userId}
+    </select>
+
+    <insert id="setUserIdInKeywordSetting" parameterType="java.lang.Long">
+        INSERT INTO user_keyword_setting(user_id)
+        VALUES (#{userId});
+    </insert>
+
+    <select id="getUserKeywordSettingByUserId" parameterType="java.lang.Long" resultMap="userKeywordSettingResult">
+        SELECT * FROM user_keyword_setting
+        WHERE user_id=#{userId};
+    </select>
+
+    <update id="modifyKeywordSetting" parameterType="in.koala.domain.KeywordSetting">
+        UPDATE user_keyword_setting
+        SET keyword_notification_off=#{keywordNotificationOff},
+            keyword_vibration_off=#{keywordVibrationOff},
+            day=#{day},
+            time=#{time},
+            sound=#{sound}
+        WHERE user_id=#{userId};
+    </update>
+</mapper>
