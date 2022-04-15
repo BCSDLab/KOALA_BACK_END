@@ -9,4 +9,5 @@ public interface KeywordSettingMapper {
     void setUserIdInKeywordSetting(Long userId);
     Integer hasDuplicatedUserIdInKeywordSetting(Long userId);
     KeywordSetting getUserKeywordSettingByUserId(Long userId);
+    void modifyKeywordSetting(KeywordSetting keywordSetting);
 }

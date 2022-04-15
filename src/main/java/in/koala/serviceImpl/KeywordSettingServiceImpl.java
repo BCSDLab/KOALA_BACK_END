@@ -3,10 +3,7 @@ package in.koala.serviceImpl;
 import in.koala.domain.KeywordSetting;
 import in.koala.mapper.KeywordSettingMapper;
 import in.koala.service.KeywordSettingService;
-import in.koala.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +23,11 @@ public class KeywordSettingServiceImpl implements KeywordSettingService {
     @Override
     public KeywordSetting getUserKeywordSetting(Long userId) {
         return keywordSettingMapper.getUserKeywordSettingByUserId(userId);
+    }
+
+    @Override
+    public void modifyKeywordSetting(KeywordSetting keywordSetting) {
+        keywordSettingMapper.modifyKeywordSetting(keywordSetting);
     }
 
     private Boolean hasDuplicatedUserIdInKeywordSetting(Long userId){
