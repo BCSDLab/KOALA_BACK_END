@@ -95,7 +95,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public String getMemberCount(){
         ChatMessage message = ChatMessage.builder()
-                                .sender(Long.valueOf(0))
+                                .sender(0L)
                                 .message(setOps.size("member").toString())
                                 .type(ChatType.ACCESS)
                                 .build();
