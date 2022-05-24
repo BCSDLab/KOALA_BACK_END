@@ -4,6 +4,7 @@ import in.koala.annotation.Auth;
 import in.koala.enums.ErrorMessage;
 import in.koala.enums.TokenType;
 import in.koala.enums.UserType;
+import in.koala.exception.AuthorizationException;
 import in.koala.exception.NonCriticalException;
 import in.koala.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +48,7 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
             }
         }
 
-        throw new NonCriticalException(ErrorMessage.FORBIDDEN_EXCEPTION);
+        throw new AuthorizationException(ErrorMessage.FORBIDDEN_EXCEPTION);
     }
 
     @Override

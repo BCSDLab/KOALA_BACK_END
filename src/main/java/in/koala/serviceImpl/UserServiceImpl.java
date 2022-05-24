@@ -7,8 +7,7 @@ import in.koala.domain.user.NonUser;
 import in.koala.domain.user.NormalUser;
 import in.koala.domain.user.User;
 import in.koala.enums.*;
-import in.koala.exception.CriticalException;
-import in.koala.exception.NonCriticalException;
+import in.koala.exception.*;
 import in.koala.mapper.AuthEmailMapper;
 import in.koala.mapper.UserMapper;
 import in.koala.service.DeviceTokenService;
@@ -23,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,13 +31,12 @@ import org.thymeleaf.spring5.SpringTemplateEngine;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
 import java.sql.Timestamp;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
     private final DeviceTokenService deviceTokenService;
@@ -56,27 +55,8 @@ public class UserServiceImpl implements UserService {
     private String defaultUrl;
 
 
-    // 클라이언트 필요없는 서버 개발용
     @Override
-    public JWToken snsLogin(String code, SnsType snsType) throws Exception {
-        SnsLogin snsLogin = this.initSnsService(snsType);
-
-        NormalUser snsUser = snsLogin.requestUserProfile(code).toNormalUser();
-
-        if(snsUser.getProfile() == null) snsUser.setProfile(defaultUrl);
-
-        Long id = userMapper.getIdByAccount(snsUser.getAccount());
-
-        // 해당 유저가 처음 sns 로그인을 요청한다면 회원가입
-        if(id == null) {
-            this.snsSingUp(snsUser);
-            id = snsUser.getId();
-        }
-
-        return this.generateAccessAndRefreshToken(id, UserType.NORMAL);
-    }
-
-    @Override
+    @Transactional
     public JWToken snsSingIn(SnsType snsType, String deviceToken) {
         // sns 별 인터페이스 구현체 변경
         SnsLogin snsLogin = this.initSnsService(snsType);
@@ -85,7 +65,7 @@ public class UserServiceImpl implements UserService {
         String snsToken = request.getHeader("Authorization");
 
         if(snsToken == null){
-            throw new NonCriticalException(ErrorMessage.SNS_TOKEN_NOT_EXIST);
+            throw new SnsLoginException(ErrorMessage.SNS_TOKEN_NOT_EXIST);
         }
 
         NormalUser user = snsLogin.requestUserProfileByToken(snsToken).toNormalUser();
@@ -113,10 +93,11 @@ public class UserServiceImpl implements UserService {
      * 디바이스 토큰을 이용하여 이전에 비회원 로그인 여부를 파악한다
      */
     @Override
+    @Transactional
     public JWToken nonMemberLogin(String deviceToken) {
 
         if(checkIsWebUser(deviceToken)){
-            throw new NonCriticalException(ErrorMessage.WEB_NOT_SUPPORT);
+            throw new CriticalException(ErrorMessage.WEB_NOT_SUPPORT);
         }
 
         DeviceToken token = null;
@@ -161,15 +142,6 @@ public class UserServiceImpl implements UserService {
         return generateAccessAndRefreshToken(token.getUserId(), UserType.NON);
     }
 
-
-    @Override
-    public void requestSnsLogin(SnsType snsType) throws Exception {
-        SnsLogin snsLogin = initSnsService(snsType);
-
-        //System.out.println(uri);
-        response.sendRedirect(snsLogin.getRedirectUri());
-    }
-
     @Override
     public Boolean checkFindEmail(String email) {
         if(!userMapper.getUserByFindEmail(email).isPresent()) {
@@ -181,6 +153,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public NormalUser signUp(NormalUser user) {
         if(userMapper.getUserByAccount(user.getAccount()).isPresent()){
             throw new NonCriticalException(ErrorMessage.DUPLICATED_ACCOUNT_EXCEPTION);
@@ -201,16 +174,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public JWToken login(NormalUser user, String deviceToken) {
         NormalUser loginUser = userMapper.getUserPassword(user.getAccount())
-                .orElseThrow(()->new NonCriticalException(ErrorMessage.ACCOUNT_NOT_EXIST));
+                .orElseThrow(()->new AuthenticationException(ErrorMessage.ACCOUNT_NOT_EXIST));
 
         if(!BCrypt.checkpw(user.getPassword(), loginUser.getPassword()))
             throw new NonCriticalException(ErrorMessage.WRONG_PASSWORD_EXCEPTION);
 
         if(!checkIsWebUser(deviceToken)) {
-            setUserIdInDeviceToken(DeviceToken.ofNormalUser(loginUser.getId(), deviceToken));
+            this.setUserIdInDeviceToken(DeviceToken.ofNormalUser(loginUser.getId(), deviceToken));
         }
 
-        return generateAccessAndRefreshToken(loginUser.getId(), UserType.NORMAL);
+        return this.generateAccessAndRefreshToken(loginUser.getId(), UserType.NORMAL);
     }
 
     @Override
@@ -223,7 +196,7 @@ public class UserServiceImpl implements UserService {
         Long id = this.getLoginUserIdFromJwt(TokenType.ACCESS);
 
         return userMapper.getNormalUserById(id)
-                .orElseThrow(()->new NonCriticalException(ErrorMessage.USER_NOT_EXIST));
+                .orElseThrow(()->new AuthenticationException(ErrorMessage.USER_NOT_EXIST));
     }
 
     @Override
@@ -257,12 +230,13 @@ public class UserServiceImpl implements UserService {
 
     // 별개의 서비스로 분리 요망
     @Override
+    @Transactional
     public void sendEmail(AuthEmail authEmail, EmailType emailType) {
 
         if(emailType.equals(EmailType.UNIVERSITY)){
             String[] strings = authEmail.getEmail().split("@");
             if(!strings[1].equals("koreatech.ac.kr")){
-                throw new NonCriticalException(ErrorMessage.EMAIL_NOT_UNIVERSITY);
+                throw new EmailException(ErrorMessage.EMAIL_NOT_UNIVERSITY);
             }
         }
 
@@ -275,19 +249,19 @@ public class UserServiceImpl implements UserService {
 
         // 비밀번호 찾기의 경우 가입할 때 설정한 이메일과 일치하는 지 확인
         if(emailType.equals(EmailType.PASSWORD) && !user.getFindEmail().equals(authEmail.getEmail())){
-            throw new NonCriticalException(ErrorMessage.EMAIL_NOT_MATCH);
+            throw new EmailException(ErrorMessage.EMAIL_NOT_MATCH);
         }
 
         // 이미 이메일 인증을 끝낸 계정이 학교 인증 이메일 전송을 요청하면 예외 발생
         if(emailType.equals(EmailType.UNIVERSITY) && checkUserUniversityCertification(user)){
-            throw new NonCriticalException(ErrorMessage.USER_ALREADY_CERTIFICATE);
+            throw new EmailException(ErrorMessage.USER_ALREADY_CERTIFICATE);
         }
 
         authEmail.setUserId(user.getId());
 
         // 10분에 최대 5개 전송가능
         if(isEmailSentNumExceed(authEmail)){
-            throw new NonCriticalException(ErrorMessage.EMAIL_SEND_EXCEED_EXCEPTION);
+            throw new EmailException(ErrorMessage.EMAIL_SEND_EXCEED_EXCEPTION);
         }
 
         StringBuilder secret = new StringBuilder();
@@ -308,7 +282,7 @@ public class UserServiceImpl implements UserService {
                     "KOALA 서비스 인증 메일입니다.", body);
 
         } catch(Exception e){
-            throw new NonCriticalException(ErrorMessage.EMAIL_SEND_FAILED);
+            throw new EmailException(ErrorMessage.EMAIL_SEND_FAILED);
         }
 
         // 이메일 유효 기간 설정
@@ -326,6 +300,7 @@ public class UserServiceImpl implements UserService {
     }
     
     @Override
+    @Transactional
     public void certificateEmail(AuthEmail authEmail, EmailType emailType) {
         // email 전송 종류에 따른 유저 초기화
         User user = initNormalUserByEmailType(authEmail, emailType);
@@ -342,19 +317,19 @@ public class UserServiceImpl implements UserService {
 
         // 이메일 전송이 선행되어야 함
         if(authEmailList.size() <= 0){
-            throw new NonCriticalException(ErrorMessage.EMAIL_AUTHORIZE_ORDER_EXCEPTION);
+            throw new EmailException(ErrorMessage.EMAIL_AUTHORIZE_ORDER_EXCEPTION);
         }
 
         AuthEmail selectedAuthEmail = authEmailList.get(0);
 
         // 메일 인증 유효기간 지났을때 발생
         if(selectedAuthEmail.getExpiredAt().before(new Timestamp(System.currentTimeMillis()))){
-            throw new NonCriticalException(ErrorMessage.EMAIL_EXPIRED_AUTH_EXCEPTION);
+            throw new EmailException(ErrorMessage.EMAIL_EXPIRED_AUTH_EXCEPTION);
         }
 
         // secret 이 일치하지 않음
         if(!selectedAuthEmail.getSecret().equals(authEmail.getSecret())){
-            throw new NonCriticalException(ErrorMessage.EMAIL_SECRET_NOT_MATCH);
+            throw new EmailException(ErrorMessage.EMAIL_SECRET_NOT_MATCH);
         }
 
         // 만약 학교 인증이라면 인증했다는 사실을 User 에 기록
@@ -395,6 +370,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void changePassword(NormalUser user) {
         NormalUser selectedUser = userMapper.getUserPassword(user.getAccount())
                 .orElseThrow(()->new NonCriticalException(ErrorMessage.ACCOUNT_NOT_EXIST));
@@ -447,6 +423,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void softDeleteUser() {
         NormalUser user = this.getLoginNormalUserInfo();
 
@@ -462,6 +439,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public String editProfile(MultipartFile multipartFile){
 
         multipartFile = imageUtil.resizing(multipartFile, 500);
@@ -481,7 +459,6 @@ public class UserServiceImpl implements UserService {
 
 
     private boolean isEmailSentNumExceed(AuthEmail authEmail){
-
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendar.add(Calendar.SECOND, -601);
@@ -492,7 +469,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private Long getLoginUserIdFromJwt(TokenType tokenType){
-        return Long.valueOf(String.valueOf(getClaimsFromJwt(tokenType).get("id")));
+        return Long.valueOf(String.valueOf(this.getClaimsFromJwt(tokenType).get("id")));
     }
 
     private Claims getClaimsFromJwt(TokenType tokenType){
@@ -503,8 +480,10 @@ public class UserServiceImpl implements UserService {
     }
 
     private JWToken generateAccessAndRefreshToken(Long id, UserType userType){
-        return JWToken.ofLogin(jwt.generateToken(id, TokenType.ACCESS, userType)
-                , jwt.generateToken(id, TokenType.REFRESH, userType));
+        String accessToken = jwt.generateToken(id, TokenType.ACCESS, userType);
+        String refreshToken = jwt.generateToken(id, TokenType.REFRESH, userType);
+
+        return JWToken.ofLogin(accessToken, refreshToken);
     }
 
     // 로그인 요청이 들어온 sns 에 맞춰 SnsLogin 인터페이스 구현체 결정
