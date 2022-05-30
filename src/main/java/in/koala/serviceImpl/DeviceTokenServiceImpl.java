@@ -13,6 +13,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
+@Transactional(readOnly = true)
 public class DeviceTokenServiceImpl implements DeviceTokenService {
 
     private final DeviceTokenMapper deviceTokenMapper;

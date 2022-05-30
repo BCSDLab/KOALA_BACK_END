@@ -38,7 +38,7 @@ public class S3Util {
 
         UUID uid = UUID.randomUUID();
 
-        String savedName = uid.toString() + "-" + System.currentTimeMillis() + "." + fileExt;
+        String savedName = uid + "-" + System.currentTimeMillis() + "." + fileExt;
 
         ObjectMetadata omd = new ObjectMetadata();
         omd.setContentType(multipartFile.getContentType());

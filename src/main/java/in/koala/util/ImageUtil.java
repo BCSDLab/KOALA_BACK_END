@@ -2,17 +2,14 @@ package in.koala.util;
 
 import in.koala.enums.ErrorMessage;
 import in.koala.exception.NonCriticalException;
-import in.koala.util.image.MultipartImage;
+import in.koala.util.dto.MultipartImage;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.Buffer;
 
 @Component
 public class ImageUtil {
