@@ -99,7 +99,7 @@
     </select>
 
     <select id="checkNickname" parameterType="String" resultType="Integer">
-        SELECT count(*) FROM normal_user WHERE nickname=#{nickname};
+        SELECT count(*) FROM normal_user WHERE nickname=#{nickname} LIMIT 1;
     </select>
 
     <select id="getUserPassword" parameterType="String" resultType="in.koala.domain.user.NormalUser">
@@ -154,10 +154,6 @@
             profile=#{url}
         WHERE user_id=#{id}
     </update>
-
-    <select id="test" resultType="String">
-        SELECT nickname from normal_user where user_id=1;
-    </select>
 
     <insert id="insertNonMemberUser" parameterType="in.koala.domain.user.NonUser">
         INSERT INTO non_user(id)

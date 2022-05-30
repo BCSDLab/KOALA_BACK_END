@@ -1,4 +1,4 @@
-package in.koala.util.image;
+package in.koala.util.dto;
 
 import org.springframework.web.multipart.MultipartFile;
 

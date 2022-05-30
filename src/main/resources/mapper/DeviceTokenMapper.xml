@@ -7,7 +7,7 @@
     </select>
 
     <select id="checkTokenExist" resultType="Integer">
-        SELECT count(token) FROM device_token WHERE token=#{deviceToken};
+        SELECT count(token) FROM device_token WHERE token=#{deviceToken} LIMIT 1;
     </select>
 
     <update id="updateExTokenToNewToken">

@@ -16,7 +16,6 @@ import in.koala.service.ChatService;
 import in.koala.service.UserService;
 import in.koala.util.JwtUtil;
 import in.koala.util.S3Util;
-import in.koala.util.image.MultipartImage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.messaging.Message;
@@ -95,7 +94,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public String getMemberCount(){
         ChatMessage message = ChatMessage.builder()
-                                .sender(Long.valueOf(0))
+                                .sender(0L)
                                 .message(setOps.size("member").toString())
                                 .type(ChatType.ACCESS)
                                 .build();
