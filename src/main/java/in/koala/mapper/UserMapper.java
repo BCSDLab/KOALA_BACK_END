@@ -10,7 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface UserMapper {
-    String test();
     void signUp(NormalUser user);
     void snsSignUp(NormalUser user);
     Long getIdByAccount(String account);

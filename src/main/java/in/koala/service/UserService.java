@@ -11,11 +11,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 public interface UserService {
-    JWToken snsLogin(String code, SnsType snsType) throws Exception;
     JWToken snsSingIn(SnsType snsType, String deviceToken);
     JWToken login(NormalUser user, String deviceToken);
     NormalUser signUp(NormalUser user);
-    void requestSnsLogin(SnsType snsType) throws Exception;
     User getLoginUserInfo();
     NormalUser getLoginNormalUserInfo();
     void updateNickname(String nickname);
