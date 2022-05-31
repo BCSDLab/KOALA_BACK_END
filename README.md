@@ -1,70 +1,49 @@
-# KOALA_BACK_END (spring-boot-starter)
+# KOALA(Koreatech Alarm) BACK END
+키워드를 이용한 공지사항 알림 서비스
 
-Spring-Boot-Starter-Setting은 많이 스프링 부트에서 많이 사용하는 라이브러리 및 기능을 적용한 예제 프로젝트입니다.
+## 배경
+학교에서는 페이스북, 학과 게시판, 자유 게시판 등등 여러가지 게시판을 통하여 공지사항이나 각종 정보들이 업로드 됩니다.
 
-pring-Boot-Starter-Setting is an example project that applies libraries and features that are commonly used in spring boots.
+ 이런 정보들을 본인이 수시로 **직접 확인하는 것은 피곤한 일**입니다. 
 
-적용된 라이브러리 및 기능 구성은 아래와 같습니다.
-The applied library and feature configurations are shown below.
+ 그래서 **직접 확인하는 부분을 자동화**하여 여러 매체들을 통해 올라오는 정보들을 모아주고, 각자가 설정한 **키워드**를 통하여 관심 있는 공지가 올라오면 **알림**을 보내주는 서비스를 만들어보고자 하였습니다.
 
-```bash
-lucy-server-filter(sax-filter) - XSS 서블릿 필터(requestBody 적용 안됨)
-ReadableRequestWrapperFilter - request.InputStream 데이터 휘발 방지
-AOP - ASPECT-J를 사용. BootApplication에 @EnableAspectJAutoProxy 등록
-lucy-requestBody-filter - AOP 방식으로 XSS requestBody 전용 필터 구현. @Xss, @XssExclude Annotation을 개발하여 디테일한 필터링이 가능해짐.
-Database - Mysql 5.7 버전에 적용. 트랜잭션 설정 및 예제 파일 구현.
-Flyway - 예제에 필요한 tb_test_info 테이블 생성. resource/db/migration 폴더 아래에 추가 기입하면 됨
-Mybatis - xml 방식과 annotation 방식 모두 구현
-Redis - Redis 구현
-AWS S3 - AWS S3 기능 구현(생성, 삭제(하드, 소프트 선택가능)), static 경로 및 파일 명 겹치지 않도록 설정. 다중 업로드도 구현되어 있으나 Swagger 버그로 인하여 Swagger에서는 실행할 수 없음. POST MAN 으로 테스트 진행시 잘 동작하는 것을 확인함.
-AWS SES - 메일 기능 구현, 메일 템플릿으로 thymeleaf 선정. 속도는 느린 편이나 자료가 많고 현재 많이 쓰이고 있음.
-Thymeleaf - 설정 완료(SES 예제에서 실제 사용됨)
-~Exception - Runtime Exception을 상속한 여러 Exception 구현, 중요도에 따라 Non Critical, Critical Exception을 구분함.
-GlobalExceptionHandler - 스프링에서 발생하는 모든 Excetion에 대한 리턴 타입 , 메시지를 정돈하여 리턴함. 
-SlackNotification - Critical Exception 혹은 예상치 못한 에러 발생 시 Slack에 Noti함. GlobalExceptionHandler에서 호출됨. url, requestParam, requestBody, ErrorMessage, ErrorStackTrace등의 정보를 담아 전송한다.
-Swagger 2.9.2 - 3.0.0으로 버전업하려다 추후로 미룸. 현재 AWS S3 - 다중파일 업로드 시 에러 발생
-CORS FILTER - WebConfig 파일에 설정되어 있음. 현재는 모든 접근을 허용함.
-Scheduler - Scheduler의 로깅 능력을 향상시키기 위해 SchedulerConfig에 설정 적용. 실제 사용 예제는 Scheduler 파일 내에 주석을 풀어주면 됨.
-Validate - hibernate의 vaildate 기능을 사용. Test, Test2 domain에 적용되어 있다.
-```
-해당 프로젝트의 패키징 형태는 war 입니다.
+- 각 사용자는 알림을 받고 싶은 키워드를 설정할 수 있습니다
+- 크롤링을 통하여 공지사항의 제목을 수집 후 해당 제목에 키워드가 포함되어 있다면 알림을 보내게 됩니다
+- 각자 학교를 인증하였을 경우 인기 있는 키워드에 대하여 채팅을 할 수 있습니다.
 
-## Installation
+## 프로젝트 팀 구성
 
-install Git, DBMS(example query consists of mysql), Redis, Maven 3
+- [BCSDLab](https://bcsdlab.com/) 에서 진행하고있는 프로젝트입니다.
+- UI/UX, WEB, IOS, ANDROID, BACK-END 이렇게 5개의 팀이 협업하여 개발하였습니다.
 
-```bash
-git clone ''
+## 협업 방법
+- 팀 간 협업은 Zeplin, Slack을 통하여 진행하였습니다
+- Swagger를 이용하여 API 명세서를 제공하고, Google drive에 개발 문서를 작성하여 공유하였습니다
+- 일정 관리는 Trello를 이용하여 진행하였습니다.
 
-// Usage를 참고하여 application.properties 작성
-// Create applications.properties by referring to Usage
+## 프로젝트 기술 스택
+개발 : SpringBoot, Mybatis, Mysql, OAuth2, OIDC, STOMP, FCM, Web Socket
 
-// 프로젝트 경로에서
-// in project path
+, AWS SES, AWS S3,  JWT, BCrypt
 
-mvn clean package war:war -DskipTests
+인프라 : Jenkins, Nginx, Tomcat, AWS EC2, AWS LoadBalancer, AWS CloudFront, Route53
 
-// /tartget/ROOT.war 확인
-// /tartget/ROOT.war check
-```
+협업 툴 : Zeplin, Swagger, Slack, Trello, Git(git-flow), Google drive
 
-## Usage
+## API 명세
+https://api.stage.koala.im/swagger-ui.html#/
+
+## 와이어 프레임
+1. **로그인**  
+
+![Untitled](https://s3.us-west-2.amazonaws.com/secure.notion-static.com/6760446e-c8cc-49c8-b4f5-090f1776cc56/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20220531%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20220531T192222Z&X-Amz-Expires=86400&X-Amz-Signature=db74c8249df65a8b1f2a0eb30dbce7498ef7b1b4bf8f255aa0ba5d60b0918c65&X-Amz-SignedHeaders=host&response-content-disposition=filename%20%3D%22Untitled.png%22&x-id=GetObject)
+
+2. **채팅**  
+
+![Untitled](https://s3.us-west-2.amazonaws.com/secure.notion-static.com/e6a3dfd7-494a-430e-b48a-d65bc44ec66c/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20220531%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20220531T192353Z&X-Amz-Expires=86400&X-Amz-Signature=ec554437fd78bdb96fa7931a357419060647960355cc387110f7f6871f7c45d6&X-Amz-SignedHeaders=host&response-content-disposition=filename%20%3D%22Untitled.png%22&x-id=GetObject)
 
 
-```python
-// src/main/resource/application.example.config copy
-// src/main/resource/application.config paste
-// and modify application.config
+3. **알림**  
 
-//The code below is an example of the local environment.
-
-```
-
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-Please make sure to update tests as appropriate.
-
-gmail : xhddlf8070@gmail.com
-## License
-[MIT](https://choosealicense.com/licenses/mit/)
+![Untitled](https://s3.us-west-2.amazonaws.com/secure.notion-static.com/f04ce328-b748-4e2b-bd36-d95ddba6fe07/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20220531%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20220531T192427Z&X-Amz-Expires=86400&X-Amz-Signature=2de3c5fbda3933b9eff3884655c6db3875bfa9ddc58ec4b47dde96760e0876c7&X-Amz-SignedHeaders=host&response-content-disposition=filename%20%3D%22Untitled.png%22&x-id=GetObject)
