@@ -31,7 +31,6 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring5.SpringTemplateEngine;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -43,7 +42,6 @@ public class UserServiceImpl implements UserService {
     private final DeviceTokenService deviceTokenService;
     private final UserMapper userMapper;
     private final AuthEmailMapper authEmailMapper;
-    private final HttpServletResponse response;
     private final JwtUtil jwt;
     // list 형식으로 주입받게 되면 해당 인터페이스를 구현하는 모든 클래스를 주입받을 수 있다.
     private final List<SnsLogin> snsLoginList;
@@ -88,7 +86,7 @@ public class UserServiceImpl implements UserService {
             this.setUserIdInDeviceToken(DeviceToken.ofNormalUser(id, deviceToken));
         }
 
-        return generateAccessAndRefreshToken(id, UserType.NORMAL);
+        return this.generateAccessAndRefreshToken(id, UserType.NORMAL);
     }
 
     /**
@@ -144,11 +142,11 @@ public class UserServiceImpl implements UserService {
 
         keywordSettingService.setUserIdInKeywordSetting(token.getUserId());
 
-        return generateAccessAndRefreshToken(token.getUserId(), UserType.NON);
+        return this.generateAccessAndRefreshToken(token.getUserId(), UserType.NON);
     }
 
     @Override
-    public Boolean checkFindEmail(String email) {
+    public Boolean checkFindEmailDuplicated(String email) {
         if(!userMapper.getUserByFindEmail(email).isPresent()) {
             return true;
 
@@ -164,37 +162,38 @@ public class UserServiceImpl implements UserService {
             throw new NonCriticalException(ErrorMessage.DUPLICATED_ACCOUNT_EXCEPTION);
         }
 
-        isFindEmailDuplicated(user.getNickname());
-        checkFindEmail(user.getFindEmail());
+        this.checkNickNameDuplicated(user.getNickname());
+        this.checkFindEmailDuplicated(user.getFindEmail());
         // 비밀번호 단방향 암호화
         user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
         user.setProfile(defaultUrl);
         user.setUserType(UserType.NORMAL);
         user.setSnsType(SnsType.NORMAL);
 
-        normalUserSingUp(user);
+        this.normalUserSingUp(user);
         return userMapper.getNormalUserById(user.getId()).get();
     }
 
     @Override
     public JWToken login(NormalUser user, String deviceToken) {
-        NormalUser loginUser = userMapper.getUserPassword(user.getAccount())
+        NormalUser loginUser = userMapper.getUserPasswordByAccount(user.getAccount())
                 .orElseThrow(()->new AuthenticationException(ErrorMessage.ACCOUNT_NOT_EXIST));
 
         if(!BCrypt.checkpw(user.getPassword(), loginUser.getPassword()))
-            throw new NonCriticalException(ErrorMessage.WRONG_PASSWORD_EXCEPTION);
+            throw new AuthenticationException(ErrorMessage.WRONG_PASSWORD_EXCEPTION);
 
+        // 웹의 경우 알림 전송 불가
         if(!checkIsWebUser(deviceToken)) {
             this.setUserIdInDeviceToken(DeviceToken.ofNormalUser(loginUser.getId(), deviceToken));
         }
 
         keywordSettingService.setUserIdInKeywordSetting(loginUser.getId());
-        return generateAccessAndRefreshToken(loginUser.getId(), UserType.NORMAL);
+        return this.generateAccessAndRefreshToken(loginUser.getId(), UserType.NORMAL);
     }
 
     @Override
     public User getLoginUserInfo() {
-        return getUserInfo(getLoginUserIdFromJwt(TokenType.ACCESS));
+        return this.getUserInfo(getLoginUserIdFromJwt(TokenType.ACCESS));
     }
 
     @Override
@@ -218,7 +217,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Boolean isFindEmailDuplicated(String nickname) {
+    public Boolean checkNickNameDuplicated(String nickname) {
         if (userMapper.checkNickname(nickname) > 0) {
             throw new NonCriticalException(ErrorMessage.DUPLICATED_NICKNAME_EXCEPTION);
 
@@ -231,14 +230,13 @@ public class UserServiceImpl implements UserService {
     public JWToken refresh() {
         User user = getUserInfo(getLoginUserIdFromJwt(TokenType.REFRESH));
 
-        return generateAccessAndRefreshToken(user.getId(), user.getUserType());
+        return this.generateAccessAndRefreshToken(user.getId(), user.getUserType());
     }
 
     // 별개의 서비스로 분리 요망
     @Override
     @Transactional
     public void sendEmail(AuthEmail authEmail, EmailType emailType) {
-
         if(emailType.equals(EmailType.UNIVERSITY)){
             String[] strings = authEmail.getEmail().split("@");
             if(!strings[1].equals("koreatech.ac.kr")){
@@ -259,7 +257,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 이미 이메일 인증을 끝낸 계정이 학교 인증 이메일 전송을 요청하면 예외 발생
-        if(emailType.equals(EmailType.UNIVERSITY) && checkUserUniversityCertification(user)){
+        if(emailType.equals(EmailType.UNIVERSITY) && isUserUniversityCertification(user)){
             throw new EmailException(ErrorMessage.USER_ALREADY_CERTIFICATE);
         }
 
@@ -309,14 +307,14 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void certificateEmail(AuthEmail authEmail, EmailType emailType) {
         // email 전송 종류에 따른 유저 초기화
-        User user = initNormalUserByEmailType(authEmail, emailType);
+        User user = this.initNormalUserByEmailType(authEmail, emailType);
 
         authEmail.setUserId(user.getId());
         authEmail.setType(emailType);
 
         List<AuthEmail> authEmailList = authEmailMapper.getUndeletedAuthEmailByUserIdAndType(authEmail);
 
-        // 만약 delete 되지 않은 이메일이 하나보다 많다면 예외 발생, 발생하면 논리 오류
+        // 만약 delete 되지 않은 이메일이 하나보다 많다면 예외 발생
         if(authEmailList.size() > 1){
             throw new CriticalException(ErrorMessage.UNEXPECTED_EMAIL_CERTIFICATE_ERROR);
         }
@@ -350,10 +348,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean isUniversityCertification() {
+    public boolean checkUniversityCertification() {
         NormalUser user = getLoginNormalUserInfo();
 
-        if(checkUserUniversityCertification(user)){
+        if(this.isUserUniversityCertification(user)){
             return true;
 
         } else {
@@ -361,7 +359,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private boolean checkUserUniversityCertification(NormalUser user) {
+    private boolean isUserUniversityCertification(NormalUser user) {
         return user.getIsAuth() == 1;
     }
 
@@ -378,40 +376,40 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changePassword(NormalUser user) {
-        NormalUser selectedUser = userMapper.getUserPassword(user.getAccount())
-                .orElseThrow(()->new NonCriticalException(ErrorMessage.ACCOUNT_NOT_EXIST));
+        NormalUser currentUser = userMapper.getUserPasswordByAccount(user.getAccount())
+                .orElseThrow(()->new AuthenticationException(ErrorMessage.ACCOUNT_NOT_EXIST));
 
-        if(checkEmailAuthPrecede(selectedUser.getId(), EmailType.PASSWORD)){
-            throw new NonCriticalException(ErrorMessage.EMAIL_NOT_AUTHORIZE_EXCEPTION);
+        if(isEmailAuthPrecede(currentUser.getId(), EmailType.PASSWORD)){
+            throw new EmailException(ErrorMessage.EMAIL_NOT_AUTHORIZE_EXCEPTION);
         }
         
-        if(BCrypt.checkpw(user.getPassword(), selectedUser.getPassword())){
-            throw new NonCriticalException(ErrorMessage.SAME_PASSWORD_EXCEPTION);
+        if(BCrypt.checkpw(user.getPassword(), currentUser.getPassword())){
+            throw new AuthenticationException(ErrorMessage.SAME_PASSWORD_EXCEPTION);
         }
 
-        selectedUser.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
+        currentUser.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
 
-        userMapper.updatePassword(selectedUser);
+        userMapper.updatePassword(currentUser);
 
         AuthEmail authEmail = AuthEmail.builder()
-                .userId(selectedUser.getId())
+                .userId(currentUser.getId())
                 .type(EmailType.PASSWORD)
                 .build();
 
         authEmailMapper.expirePastAuthEmail(authEmail);
     }
 
-    private boolean checkEmailAuthPrecede(Long userId, EmailType password) {
+    private boolean isEmailAuthPrecede(Long userId, EmailType password) {
         return authEmailMapper.getUndeletedIsAuthNumByUserId(userId, password) <= 0;
     }
 
     @Override
     public String findAccount(String email) {
         NormalUser user = userMapper.getUserByFindEmail(email)
-                .orElseThrow(()->new NonCriticalException(ErrorMessage.USER_NOT_EXIST));
+                .orElseThrow(()->new EmailException(ErrorMessage.USER_NOT_EXIST));
 
-        if(checkEmailAuthPrecede(user.getId(), EmailType.ACCOUNT)){
-            throw new NonCriticalException(ErrorMessage.EMAIL_NOT_AUTHORIZE_EXCEPTION);
+        if(isEmailAuthPrecede(user.getId(), EmailType.ACCOUNT)){
+            throw new EmailException(ErrorMessage.EMAIL_NOT_AUTHORIZE_EXCEPTION);
         }
 
          AuthEmail authEmail = AuthEmail.builder()
@@ -452,7 +450,7 @@ public class UserServiceImpl implements UserService {
         NormalUser selectedUser = this.getLoginNormalUserInfo();
 
         String profileUrl = selectedUser.getProfile();
-/*
+        /*
         if(!profileUrl.equals(defaultUrl)){
             s3Util.deleteFile(profileUrl);
         }*/
@@ -535,7 +533,7 @@ public class UserServiceImpl implements UserService {
     public JWToken getSocketToken(){
         NormalUser user = this.getLoginNormalUserInfo();
 
-        if(!checkUserUniversityCertification(user)){
+        if(!isUserUniversityCertification(user)){
             throw new NonCriticalException(ErrorMessage.USER_NOT_AUTH);
         }
 
@@ -547,7 +545,6 @@ public class UserServiceImpl implements UserService {
         userMapper.insertNonMemberUser(user);
     }
 
-  
     private void setUserIdInDeviceToken(DeviceToken deviceToken){
         if(!deviceTokenService.checkTokenExist(deviceToken.getToken())) {
             deviceTokenService.insertDeviceToken(deviceToken);

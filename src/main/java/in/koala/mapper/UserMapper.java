@@ -19,7 +19,7 @@ public interface UserMapper {
     Optional<NormalUser> getUserByFindEmail(String email);
     UserType getUserType(Long id);
     Integer checkNickname(String nickname);
-    Optional<NormalUser> getUserPassword(String account);
+    Optional<NormalUser> getUserPasswordByAccount(String account);
     void updateNickname(NormalUser user);
     void updateIsAuth(Long id);
     void updatePassword(NormalUser user);
