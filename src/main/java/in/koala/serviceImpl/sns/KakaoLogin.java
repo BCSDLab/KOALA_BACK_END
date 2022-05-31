@@ -1,10 +1,10 @@
 package in.koala.serviceImpl.sns;
 
 import in.koala.domain.sns.SnsUser;
-import in.koala.domain.user.NormalUser;
 import in.koala.enums.ErrorMessage;
 import in.koala.enums.SnsType;
 import in.koala.exception.NonCriticalException;
+import in.koala.exception.SnsLoginException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -15,9 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class KakaoLogin extends AccessTokenSnsLogin {
@@ -42,35 +39,8 @@ public class KakaoLogin extends AccessTokenSnsLogin {
             return this.requestUserProfileByAccessToken(token, profileUri);
 
         } catch(Exception e){
-            throw new NonCriticalException(ErrorMessage.KAKAO_LOGIN_ERROR);
+            throw new SnsLoginException(ErrorMessage.KAKAO_LOGIN_EXCEPTION);
         }
-    }
-
-    @Override
-    public SnsUser requestUserProfile(String code) throws Exception {
-        try {
-            return this.requestUserProfile(code, profileUri);
-
-        } catch(Exception e){
-            throw new NonCriticalException(ErrorMessage.KAKAO_LOGIN_ERROR);
-        }
-    }
-
-    @Override
-    public String getRedirectUri() {
-        Map<String, String> map = new HashMap<>();
-
-        map.put("client_id", clientId);
-        map.put("redirect_uri", redirectUri);
-        map.put("response_type", "code");
-
-        String uri = loginRequestUri;
-
-        for(String key : map.keySet()){
-            uri += "&" + key + "=" + map.get(key);
-        }
-
-        return uri;
     }
 
     @Override
@@ -97,14 +67,14 @@ public class KakaoLogin extends AccessTokenSnsLogin {
                     .build();
 
         } catch (ParseException e) {
-            e.printStackTrace();
+            throw new SnsLoginException(ErrorMessage.KAKAO_LOGIN_EXCEPTION);
         }
 
         return snsUser;
     }
 
     @Override
-    public HttpEntity getRequestAccessTokenHttpEntity(String code) {
+    public HttpEntity getAccessTokenRequestHttpEntity(String code) {
         HttpHeaders headers = new HttpHeaders();
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 
@@ -116,15 +86,5 @@ public class KakaoLogin extends AccessTokenSnsLogin {
         params.add("code", code);
 
         return new HttpEntity<>(params, headers);
-    }
-
-    @Override
-    public String requestAccessToken(String code) {
-        try {
-            return this.requestAccessToken(code, accessTokenUri);
-
-        } catch (Exception e) {
-            throw new NonCriticalException(ErrorMessage.KAKAO_LOGIN_ERROR);
-        }
     }
 }
