@@ -102,7 +102,7 @@
         SELECT count(*) FROM normal_user WHERE nickname=#{nickname} LIMIT 1;
     </select>
 
-    <select id="getUserPassword" parameterType="String" resultType="in.koala.domain.user.NormalUser">
+    <select id="getUserPasswordByAccount" parameterType="String" resultType="in.koala.domain.user.NormalUser">
         SELECT u.id, nu.password FROM normal_user nu INNER JOIN user u ON u.id=nu.user_id WHERE account=#{account} AND deleted_at IS NULL
     </select>
 

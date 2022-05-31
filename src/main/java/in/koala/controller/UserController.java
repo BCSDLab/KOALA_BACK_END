@@ -19,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
-import java.io.IOException;
 
 @RestController
 @RequestMapping(value = "/user")
@@ -81,7 +80,7 @@ public class UserController {
     @GetMapping(value="/email-check")
     @ApiOperation(value="찾기용 이메일 중복체크", notes="비밀번호나 계정을 찾기 위해 등록하는 이메일의 중복체크")
     public ResponseEntity checkFindEmail(@RequestParam @Email(message="이메일 형식이 아닙니다") String email) {
-        userService.checkFindEmail(email);
+        userService.checkFindEmailDuplicated(email);
         return new ResponseEntity(BaseResponse.of("사용 가능한 이메일입니다", HttpStatus.OK), HttpStatus.OK);
     }
 
@@ -148,7 +147,7 @@ public class UserController {
     @GetMapping(value="/auth-check")
     @ApiOperation(value="학교 인증 여부 확인", notes="해당 계정의 학교 인증 여부를 확인하는 API", authorizations = @Authorization(value = "Bearer +accessToken"))
     public ResponseEntity checkAuth(){
-        userService.isUniversityCertification();
+        userService.checkUniversityCertification();
         return new ResponseEntity(BaseResponse.of("인증 완료", HttpStatus.OK), HttpStatus.OK);
     }
 
