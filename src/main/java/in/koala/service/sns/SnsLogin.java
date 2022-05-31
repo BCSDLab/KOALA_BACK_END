@@ -5,7 +5,7 @@ import in.koala.enums.SnsType;
 
 import java.util.Map;
 
-public interface SnsLogin extends SnsLoginTest{
+public interface SnsLogin {
     SnsUser requestUserProfileByToken(String token);
     SnsType getSnsType();
 }

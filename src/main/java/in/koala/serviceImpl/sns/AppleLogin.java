@@ -3,6 +3,7 @@ package in.koala.serviceImpl.sns;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.koala.domain.sns.SnsUser;
+import in.koala.exception.SnsLoginException;
 import in.koala.serviceImpl.sns.dto.Key;
 import in.koala.serviceImpl.sns.dto.PublicKeys;
 import in.koala.enums.ErrorMessage;
@@ -36,11 +37,6 @@ public class AppleLogin implements SnsLogin {
     private final JwtUtil jwtUtil;
 
     @Override
-    public SnsUser requestUserProfile(String code) throws Exception {
-        return null;
-    }
-
-    @Override
     public SnsUser requestUserProfileByToken(String token) {
         Claims claims = this.verifyToken(token)
                 .orElseThrow(() -> new NonCriticalException(ErrorMessage.IDENTITY_TOKEN_INVALID_EXCEPTION));
@@ -57,11 +53,6 @@ public class AppleLogin implements SnsLogin {
     @Override
     public SnsType getSnsType() {
         return SnsType.APPLE;
-    }
-
-    @Override
-    public String getRedirectUri() {
-        return null;
     }
 
     private Optional<Claims> verifyToken(String identityToken) {
@@ -114,6 +105,6 @@ public class AppleLogin implements SnsLogin {
             }
         }
 
-        throw new CriticalException(ErrorMessage.IDENTITY_TOKEN_INVALID_EXCEPTION);
+        throw new SnsLoginException(ErrorMessage.IDENTITY_TOKEN_INVALID_EXCEPTION);
     }
 }

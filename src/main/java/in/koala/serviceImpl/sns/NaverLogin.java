@@ -8,6 +8,7 @@ import in.koala.domain.sns.naverLogin.NaverUser;
 import in.koala.enums.ErrorMessage;
 import in.koala.enums.SnsType;
 import in.koala.exception.NonCriticalException;
+import in.koala.exception.SnsLoginException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -18,9 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class NaverLogin extends AccessTokenSnsLogin {
@@ -44,46 +42,17 @@ public class NaverLogin extends AccessTokenSnsLogin {
     private String loginRequestUri;
 
     @Override
-    public String getRedirectUri() {
-        Map<String, String> map = new HashMap<>();
-
-        map.put("client_id", clientId);
-        map.put("redirect_uri", redirectUri);
-        map.put("response_type", "code");
-        map.put("state", "STATE_STRING");
-
-        String uri = loginRequestUri;
-
-        for(String key : map.keySet()){
-            uri += "&" + key + "=" + map.get(key);
-        }
-
-        return uri;
-    }
-
-    @Override
-    public SnsUser requestUserProfile(String code) throws Exception {
-        try {
-            return this.requestUserProfile(code, profileUri);
-
-        } catch(Exception e){
-            throw new NonCriticalException(ErrorMessage.NAVER_LOGIN_ERROR);
-        }
-    }
-
-    @Override
     public SnsUser requestUserProfileByToken(String token) {
         try {
             return this.requestUserProfileByAccessToken(token, profileUri);
 
         } catch(Exception e){
-            e.printStackTrace();
-            throw new NonCriticalException(ErrorMessage.NAVER_LOGIN_ERROR);
+            throw new NonCriticalException(ErrorMessage.NAVER_LOGIN_EXCEPTION);
         }
     }
 
     @Override
-    public HttpEntity getRequestAccessTokenHttpEntity(String code) {
+    public HttpEntity getAccessTokenRequestHttpEntity(String code) {
         HttpHeaders headers = new HttpHeaders();
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 
@@ -103,7 +72,7 @@ public class NaverLogin extends AccessTokenSnsLogin {
     }
 
     @Override
-    public SnsUser profileParsing(ResponseEntity<String> response) throws Exception {
+    public SnsUser profileParsing(ResponseEntity<String> response) {
         NaverUser naverUser;
 
         try {
@@ -114,12 +83,11 @@ public class NaverLogin extends AccessTokenSnsLogin {
             JSONObject response_obj = (JSONObject) jsonObject.get("response");
             String url = (String) response_obj.get("profile_image");
             naverUser.setProfile_image(url);
+
         } catch (ParseException e) {
-            e.printStackTrace();
-            throw new Exception();
+            throw new SnsLoginException(ErrorMessage.NAVER_LOGIN_EXCEPTION);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            throw new Exception();
+            throw new SnsLoginException(ErrorMessage.NAVER_LOGIN_EXCEPTION);
         }
 
         return SnsUser.builder()
@@ -129,15 +97,5 @@ public class NaverLogin extends AccessTokenSnsLogin {
                 .nickname(this.getSnsType() + "_" + naverUser.getId())
                 .snsType(SnsType.NAVER)
                 .build();
-    }
-
-    @Override
-    public String requestAccessToken(String code) {
-        try {
-            return this.requestAccessToken(code, accessTokenUri);
-
-        } catch (Exception e) {
-            throw new NonCriticalException(ErrorMessage.NAVER_LOGIN_ERROR);
-        }
     }
 }
