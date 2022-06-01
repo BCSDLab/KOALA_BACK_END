@@ -18,8 +18,8 @@ public class DeviceTokenServiceImpl implements DeviceTokenService {
 
     private final DeviceTokenMapper deviceTokenMapper;
 
-    @Transactional
     @Override
+    @Transactional
     public DeviceToken updateToken(String expiredToken, String newToken) {
         DeviceToken deviceToken = this.getDeviceTokenInfoByDeviceToken(expiredToken);
 
@@ -34,8 +34,8 @@ public class DeviceTokenServiceImpl implements DeviceTokenService {
         return deviceToken;
     }
 
-    @Transactional
     @Override
+    @Transactional
     public void updateTokenTableUserId(DeviceToken deviceToken) {
         DeviceToken deviceTokenInfo = this.getDeviceTokenInfoByDeviceToken(deviceToken.getToken());
 
@@ -66,8 +66,8 @@ public class DeviceTokenServiceImpl implements DeviceTokenService {
         deviceTokenMapper.insertDeviceToken(deviceToken);
     }
 
-    @Transactional
     @Override
+    @Transactional
     public void updateTokenTableNonUserId(DeviceToken deviceToken) {
         DeviceToken deviceTokenInfo = this.getDeviceTokenInfoByDeviceToken(deviceToken.getToken());
 

@@ -1,6 +1,5 @@
 package in.koala.aop;
 
-import in.koala.controller.dto.KeywordSettingRequest;
 import in.koala.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;

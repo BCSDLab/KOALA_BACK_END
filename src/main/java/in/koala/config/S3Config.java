@@ -29,6 +29,7 @@ public class S3Config {
                 .withRegion(Regions.AP_NORTHEAST_2)
                 .withCredentials(new AWSStaticCredentialsProvider(this.AwsBasicAWSCredentials()))
                 .build();
+
         return  amazonS3;
     }
 }

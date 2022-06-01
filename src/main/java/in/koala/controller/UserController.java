@@ -2,7 +2,7 @@ package in.koala.controller;
 
 import in.koala.annotation.Auth;
 import in.koala.annotation.Xss;
-import in.koala.controller.dto.*;
+import in.koala.controller.dto.user.*;
 import in.koala.controller.response.BaseResponse;
 import in.koala.enums.EmailType;
 import in.koala.enums.SnsType;
@@ -72,7 +72,7 @@ public class UserController {
     @GetMapping(value="/nickname-check")
     @ApiOperation(value="닉네임 중복체크", notes="닉네임 중복체크하는 api")
     public ResponseEntity checkNickname(@RequestParam @NotNull String nickname) {
-        userService.isFindEmailDuplicated(nickname);
+        userService.checkFindEmailDuplicated(nickname);
         return new ResponseEntity(BaseResponse.of("사용 가능한 닉네임입니다.", HttpStatus.OK), HttpStatus.OK);
     }
 

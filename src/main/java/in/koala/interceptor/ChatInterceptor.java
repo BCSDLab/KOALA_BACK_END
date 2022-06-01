@@ -29,10 +29,7 @@ public class ChatInterceptor implements ChannelInterceptor {
     @Override
     public void postSend(Message message, MessageChannel channel, boolean sent){
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        System.out.println(accessor.getCommand());
-        System.out.println(accessor.getFirstNativeHeader("Authorization"));
 
-        //TODO : 에러처리
         if(accessor.getCommand().equals(StompCommand.CONNECT)){
             String id = this.getId(accessor);
             Long memCnt = listOps.rightPush(id, accessor.getSessionId());
@@ -40,7 +37,6 @@ public class ChatInterceptor implements ChannelInterceptor {
             return;
         }
 
-        //TODO : DISCONNECT 2번 전송 발생 (2번쨰 NULL 전송) 클라이언트와 함께 확인하기
         if(accessor.getCommand().equals(StompCommand.DISCONNECT)){
             String id = this.getId(accessor);
             listOps.remove(id, 0, accessor.getSessionId());
