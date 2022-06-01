@@ -1,4 +1,4 @@
-package in.koala.controller.dto;
+package in.koala.controller.dto.user;
 
 import lombok.Data;
 

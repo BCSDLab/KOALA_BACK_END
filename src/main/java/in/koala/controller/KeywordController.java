@@ -2,7 +2,7 @@ package in.koala.controller;
 
 import in.koala.annotation.Auth;
 import in.koala.annotation.Xss;
-import in.koala.controller.dto.KeywordSettingRequest;
+import in.koala.controller.dto.keyword.KeywordSettingRequest;
 import in.koala.domain.Keyword;
 import in.koala.domain.KeywordSetting;
 import in.koala.domain.Notice;

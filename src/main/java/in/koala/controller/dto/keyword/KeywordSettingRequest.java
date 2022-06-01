@@ -1,4 +1,4 @@
-package in.koala.controller.dto;
+package in.koala.controller.dto.keyword;
 
 import in.koala.domain.KeywordSetting;
 import lombok.Getter;
