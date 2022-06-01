@@ -175,6 +175,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public JWToken login(NormalUser user, String deviceToken) {
         NormalUser loginUser = userMapper.getUserPasswordByAccount(user.getAccount())
                 .orElseThrow(()->new AuthenticationException(ErrorMessage.ACCOUNT_NOT_EXIST));
@@ -205,6 +206,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void updateNickname(String nickname) {
         if (userMapper.checkNickname(nickname) > 0) {
             throw new NonCriticalException(ErrorMessage.DUPLICATED_NICKNAME_EXCEPTION);
