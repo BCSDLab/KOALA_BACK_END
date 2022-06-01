@@ -28,8 +28,7 @@ public class SesSender {
                                 .withCharset("UTF-8").withData(SUBJECT)) // 제목
                 )
                 .withSource(FROM);  // Verify된 Email
-        if (amazonSimpleEmailServiceAsync == null)
-            System.out.println("is null");
+
         amazonSimpleEmailServiceAsync.sendEmailAsync(request);
     }
 }
